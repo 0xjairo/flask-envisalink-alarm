@@ -4,11 +4,9 @@
 import gevent
 from gevent.wsgi import WSGIServer
 from gevent.queue import Queue
-
 from flask import Flask, Response
-
 import time
-
+import Envisalink
 
 # SSE "protocol" is described here: http://mzl.la/UPFyxY
 class ServerSentEvent(object):
