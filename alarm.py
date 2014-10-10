@@ -7,9 +7,11 @@ from gevent.queue import Queue
 from flask import Flask, Response
 import time
 import Envisalink
+from AlarmServerConfig import AlarmServerConfig
 
 # globals
-_envisalinkclient = None
+ENVISALINKCLIENT = None
+CONNECTEDCLIENTS={}
 
 # SSE "protocol" is described here: http://mzl.la/UPFyxY
 class ServerSentEvent(object):
@@ -94,12 +96,14 @@ def subscribe():
 
 @app.route("/api")
 def api():
-    return Response(json.dumps(_envisalinkclient._alarmstate))
+    return Response(json.dumps(ENVISALINKCLIENT._alarmstate))
 
 def main():
+    configfile = ''
+    config = AlarmServerConfig(configfile)
 
     # Create Envisalink client object
-    _envisalinkclient = Envisalink.Client(config, CONNECTEDCLIENTS)
+    ENVISALINKCLIENT = Envisalink.Client(config, CONNECTEDCLIENTS)
 
     app.debug = True
     server = WSGIServer(("", 5000), app)
