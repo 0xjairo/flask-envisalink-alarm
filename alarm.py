@@ -8,6 +8,9 @@ from flask import Flask, Response
 import time
 import Envisalink
 
+# globals
+_envisalinkclient = None
+
 # SSE "protocol" is described here: http://mzl.la/UPFyxY
 class ServerSentEvent(object):
 
@@ -89,9 +92,20 @@ def subscribe():
 
     return Response(gen(), mimetype="text/event-stream")
 
-if __name__ == "__main__":
+@app.route("/api")
+def api():
+    return Response(json.dumps(_envisalinkclient._alarmstate))
+
+def main():
+
+    # Create Envisalink client object
+    _envisalinkclient = Envisalink.Client(config, CONNECTEDCLIENTS)
+
     app.debug = True
     server = WSGIServer(("", 5000), app)
     server.serve_forever()
     # Then visit http://localhost:5000 to subscribe 
     # and send messages by visiting http://localhost:5000/publish
+
+if __name__ == "__main__":
+    main()

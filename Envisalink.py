@@ -1,4 +1,4 @@
-import asyncore, asynchat
+import asynchat
 import socket
 import logging
 import time
@@ -271,30 +271,4 @@ class Client(asynchat.async_chat):
 
     def handle_partition(self, code, parameters, event, message):
         self.handle_event(code, parameters[0], event, message)
-
-class Proxy(asyncore.dispatcher):
-    def __init__(self, config, server):
-
-        self.logger = logging.getLogger('alarmserver.Proxy')
-        
-        self._config = config
-        if self._config.ENABLEPROXY == False:
-            return
-
-        asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.set_reuse_addr()
-        self.logger.info('Envisalink Proxy Started')
-
-        self.bind(("", self._config.ENVISALINKPROXYPORT))
-        self.listen(5)
-
-    def handle_accept(self):
-        pair = self.accept()
-        if pair is None:
-            pass
-        else:
-            sock, addr = pair
-            self.logger.info('Incoming proxy connection from %s' % repr(addr))
-            handler = ProxyChannel(server, self._config.ENVISALINKPROXYPASS, sock, addr)
 
