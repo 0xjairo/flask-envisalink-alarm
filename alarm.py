@@ -8,6 +8,26 @@ from flask import Flask, Response
 import time
 import Envisalink
 from AlarmServerConfig import AlarmServerConfig
+import argparse
+import json
+import logging
+import time
+import sys
+
+logger = logging.getLogger('alarmserver')
+logger.setLevel(logging.DEBUG)
+# Console handler 
+# Prints all messages (debug level)
+ch = logging.StreamHandler();
+ch.setLevel(logging.DEBUG)
+# create formatter
+formatter = logging.Formatter(
+    fmt='%(asctime)s %(name)s %(levelname)s: %(message)s',
+    datefmt='%b %d %H:%M:%S')
+ch.setFormatter(formatter);
+# add handlers to logger
+logger.addHandler(ch)
+
 
 # globals
 ENVISALINKCLIENT = None
@@ -98,18 +118,41 @@ def subscribe():
 def api():
     return Response(json.dumps(ENVISALINKCLIENT._alarmstate))
 
+@app.route("/api/refresh")
+def refresh():
+    ENVISALINKCLIENT.send_command('001', '')
+    return Response(json.dumps({'response' : 'Request to refresh data received'}))
+
 def main():
-    configfile = ''
-    config = AlarmServerConfig(configfile)
+    global ENVISALINKCLIENT
+
+    parser = argparse.ArgumentParser('Flask powered Alarm Server')
+    parser.add_argument('config', help='Configurationf file', default='')
+    args = parser.parse_args()
+
+    logger.info('Using configuration file %s' % args.config)
+
+    config = AlarmServerConfig(args.config)
 
     # Create Envisalink client object
     ENVISALINKCLIENT = Envisalink.Client(config, CONNECTEDCLIENTS)
+    gevent.spawn(ENVISALINKCLIENT.connect)
 
     app.debug = True
     server = WSGIServer(("", 5000), app)
-    server.serve_forever()
+    server.start()
     # Then visit http://localhost:5000 to subscribe 
     # and send messages by visiting http://localhost:5000/publish
+    try:
+        while True:
+            gevent.sleep(0.1)
+            # insert scheduling code here.
+    except KeyboardInterrupt:
+        print "Crtl+C pressed. Shutting down."
+        logger.info('Shutting down from Ctrl+C')
+
+        server.stop()
+        sys.exit()
 
 if __name__ == "__main__":
     main()

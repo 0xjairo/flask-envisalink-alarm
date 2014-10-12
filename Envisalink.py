@@ -1,5 +1,5 @@
-import asynchat
-import socket
+from gevent import socket
+from gevent import monkey; monkey.patch_socket()
 import logging
 import time
 import datetime
@@ -27,14 +27,13 @@ def to_chars(string):
 def get_checksum(code, data):
     return ("%02X" % sum(to_chars(code)+to_chars(data)))[-2:]
 
-class Client(asynchat.async_chat):
+class Client():
     def __init__(self, config, proxyclients):
 
         self.logger = logging.getLogger('alarmserver.EnvisalinkClient')
 
-        self.logger.debug('Staring Envisalink Client')
+        self.logger.debug('Starting Envisalink Client')
         # Call parent class's __init__ method
-        asynchat.async_chat.__init__(self)
 
         # save dict reference to connected clients
         self._proxyclients = proxyclients
@@ -48,8 +47,8 @@ class Client(asynchat.async_chat):
         # Are we logged in?
         self._loggedin = False
 
-        # Set our terminator to \n
-        self.set_terminator("\r\n")
+        # Set out terminator
+        self._terminator = '\r\n'
 
         # Set config
         self._config = config
@@ -57,44 +56,53 @@ class Client(asynchat.async_chat):
         # Reconnect delay
         self._retrydelay = 10
 
-        self.do_connect()
-
-    def do_connect(self, reconnect = False):
+    def connect(self, reconnect = False):
         # Create the socket and connect to the server
         if reconnect == True:
             self.logger.warning('Connection failed, retrying in '+str(self._retrydelay)+ ' seconds')
             for i in range(0, self._retrydelay):
                 time.sleep(1)
 
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.logger.debug('Connecting to {}:{}'.format(self._config.ENVISALINKHOST, self._config.ENVISALINKPORT))
-        self.connect((self._config.ENVISALINKHOST, self._config.ENVISALINKPORT))
+        self.socket.connect((self._config.ENVISALINKHOST, self._config.ENVISALINKPORT))
+        # spin forever
+        while True:
+            data = self.socket.recv(4096)
+            # if no data, reconnect
+            if not data:
+                self.handle_close()
+                continue
 
-    def collect_incoming_data(self, data):
-        # Append incoming data to the buffer
-        self._buffer.append(data)
+            while self._terminator in data:
+                # look for terminator in data
+                idx = data.index(self._terminator)
+                # append up to terminator
+                self._buffer.append(data[:idx])
+                # handle data
+                self.found_terminator()
+                # shift data
+                data = data[idx+len(self._terminator):]
+            else:
+                self._buffer.append(data)
 
     def found_terminator(self):
         line = "".join(self._buffer)
         self.handle_line(line)
         self._buffer = []
 
-    def handle_connect(self):
-        self.logger.info("Connected to %s:%i" % (self._config.ENVISALINKHOST, self._config.ENVISALINKPORT))
-        pass
-
     def handle_close(self):
         self._loggedin = False
-        self.close()
+        self.socket.close()
         self.logger.info("Disconnected from %s:%i" % (self._config.ENVISALINKHOST, self._config.ENVISALINKPORT))
-        self.do_connect(True)
+        self.connect(True)
 
     def handle_error(self):
         self._loggedin = False
         self.close()
         self.logger.error("Disconnected from %s:%i" % (self._config.ENVISALINKHOST, self._config.ENVISALINKPORT))
-        self.do_connect(True)
+        self.connect(True)
 
     def send_command(self, code, data, checksum = True):
         if checksum == True:
@@ -103,7 +111,7 @@ class Client(asynchat.async_chat):
             to_send = code+data+'\r\n'
 
         self.logger.debug('TX > '+to_send[:-1])
-        self.push(to_send)
+        self.socket.send(to_send)
 
     def handle_line(self, input):
         if input != '':
@@ -114,10 +122,11 @@ class Client(asynchat.async_chat):
             parameters=input[3:][:-2]
             event = getMessageType(int(code))
             message = self.format_event(event, parameters)
-            self.logger.debug('RX < ' +str(code)+' - '+message)
+            self.logger.debug('RX < ' +str(code)+' - '+message + ' params:' + parameters)
 
             try:
                 handler = "handle_%s" % evl_ResponseTypes[code]['handler']
+                self.logger.debug('handler:'+ handler)
             except KeyError:
                 #call general event handler
                 self.handle_event(code, parameters, event, message)
@@ -177,6 +186,7 @@ class Client(asynchat.async_chat):
             sys.exit(0)
 
     def handle_event(self, code, parameters, event, message):
+        self.logger.debug('handle_event type:{}'.format(event.get('type','None')))
         # only handle events with a 'type' defined
         if not 'type' in event:
             return
