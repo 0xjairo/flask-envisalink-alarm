@@ -2,7 +2,7 @@
 #
 # Make sure your gevent version is >= 1.0
 import gevent
-from gevent.wsgi import WSGIServer
+from gevent.pywsgi import WSGIServer
 from gevent.queue import Queue
 from gevent.event import Event
 from flask import Flask, Response
@@ -116,14 +116,11 @@ def main():
     gevent.spawn(ENVISALINKCLIENT.connect)
 
     app.debug = True
-    server = WSGIServer(("", 5000), app)
-    server.start()
+    server = WSGIServer(("", 5000), app, keyfile=config.KEYFILE, certfile=config.CERTFILE)
 
     gevent.spawn(publish)
     try:
-        while True:
-            gevent.sleep(0.1)
-            # insert scheduling code here.
+        server.serve_forever()
     except KeyboardInterrupt:
         print "Crtl+C pressed. Shutting down."
         logger.info('Shutting down from Ctrl+C')
