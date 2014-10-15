@@ -4,17 +4,14 @@
 import gevent
 from gevent.pywsgi import WSGIServer
 from gevent.queue import Queue
-from gevent.event import Event
 from flask import Flask, Response
 from flask import render_template
-import time
 import Envisalink
 from AlarmServerConfig import AlarmServerConfig
 import argparse
 import json
 import logging
 import time
-import sys
 
 logger = logging.getLogger('alarmserver')
 logger.setLevel(logging.DEBUG)
@@ -126,7 +123,7 @@ def main():
         logger.info('Shutting down from Ctrl+C')
 
         server.stop()
-        sys.exit()
+        raise SystemExit
 
 if __name__ == "__main__":
     main()
