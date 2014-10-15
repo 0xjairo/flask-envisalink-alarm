@@ -4,7 +4,9 @@
 import gevent
 from gevent.wsgi import WSGIServer
 from gevent.queue import Queue
+from gevent.event import Event
 from flask import Flask, Response
+from flask import render_template
 import time
 import Envisalink
 from AlarmServerConfig import AlarmServerConfig
@@ -27,7 +29,6 @@ formatter = logging.Formatter(
 ch.setFormatter(formatter);
 # add handlers to logger
 logger.addHandler(ch)
-
 
 # globals
 ENVISALINKCLIENT = None
@@ -60,44 +61,20 @@ subscriptions = []
 # Client code consumes like this.
 @app.route("/")
 def index():
-    debug_template = """
-     <html>
-       <head>
-       </head>
-       <body>
-         <h1>Server sent events</h1>
-         <div id="event"></div>
-         <script type="text/javascript">
-
-         var eventOutputContainer = document.getElementById("event");
-         var evtSrc = new EventSource("/subscribe");
-
-         evtSrc.onmessage = function(e) {
-             console.log(e.data);
-             eventOutputContainer.innerHTML = e.data;
-         };
-
-         </script>
-       </body>
-     </html>
-    """
-    return(debug_template)
+    return render_template('index.htm')
 
 @app.route("/debug")
 def debug():
     return "Currently %d subscriptions" % len(subscriptions)
 
-@app.route("/publish")
 def publish():
-    #Dummy data - pick up from request for real data
-    def notify():
+    # spin forever
+    while True:
         msg = str(time.time())
         for sub in subscriptions[:]:
-            sub.put(msg)
-    
-    gevent.spawn(notify)
-    
-    return "OK"
+            sub.put(json.dumps(ENVISALINKCLIENT._alarmstate))
+
+        gevent.sleep(1)
 
 @app.route("/subscribe")
 def subscribe():
@@ -141,8 +118,8 @@ def main():
     app.debug = True
     server = WSGIServer(("", 5000), app)
     server.start()
-    # Then visit http://localhost:5000 to subscribe 
-    # and send messages by visiting http://localhost:5000/publish
+
+    gevent.spawn(publish)
     try:
         while True:
             gevent.sleep(0.1)

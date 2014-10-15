@@ -1,0 +1,51 @@
+ <html>
+   <head>
+   </head>
+   <body>
+     <h1>Alarm Server</h1>
+     <div id="event"></div>
+     <hr>
+     <div id="zones">
+     </div>
+     <script type="text/javascript">
+
+     var eventOutputContainer = document.getElementById("event");
+     var zonesContainer = document.getElementById("zones");
+     var evtSrc = new EventSource("/subscribe");
+
+     evtSrc.onmessage = function(e) {
+         //console.log(e.data);
+         var alarmstate = JSON.parse(e.data);
+         var zones = alarmstate.zone;
+         // clear zones
+         zonesContainer.innerHTML = "";
+         for(var zone in zones){
+             if(!zones.hasOwnProperty(zone)){ continue; }
+
+             var name = zones[zone].name
+             zonesContainer.innerHTML += "<div>";
+             zonesContainer.innerHTML += "<h3>" + name + " (zone " +zone + ")</h3>";
+
+             var lastevents = zones[zone].lastevents;
+             try{
+                 if(lastevents.length > 0){
+                     zonesContainer.innerHTML += "<p>" + st + ": " + lastevents[lastevents.length-1].message + "</p>";
+                 }
+             }catch(err){}
+
+             zonesContainer.innerHTML += "<ul>"
+             var status = zones[zone].status;
+             for(var st in status){
+                 if(!status.hasOwnProperty(st)){ continue; }
+                 zonesContainer.innerHTML += "<li>" + st + ": " + status[st] + "</li>";
+             }
+             zonesContainer.innerHTML += "</ul>"
+             zonesContainer.innerHTML += "</div>";// + " Fault:" + zone.status.fault;
+         }
+         //console.log(alarmstate.zone)
+         eventOutputContainer.innerHTML = e.data;
+     };
+
+     </script>
+   </body>
+ </html>
