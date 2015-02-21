@@ -28,7 +28,7 @@ ch.setFormatter(formatter);
 logger.addHandler(ch)
 
 # globals
-ENVISALINKCLIENT = None
+EnvisalinkClient = None
 CONNECTEDCLIENTS={}
 
 # SSE "protocol" is described here: http://mzl.la/UPFyxY
@@ -69,7 +69,7 @@ def publish():
     while True:
         msg = str(time.time())
         for sub in subscriptions[:]:
-            sub.put(json.dumps(ENVISALINKCLIENT._alarmstate))
+            sub.put(json.dumps(EnvisalinkClient._alarmstate))
 
         gevent.sleep(1)
 
@@ -90,15 +90,15 @@ def subscribe():
 
 @app.route("/api")
 def api():
-    return Response(json.dumps(ENVISALINKCLIENT._alarmstate))
+    return Response(json.dumps(EnvisalinkClient._alarmstate))
 
 @app.route("/api/refresh")
 def refresh():
-    ENVISALINKCLIENT.send_command('001', '')
+    EnvisalinkClient.send_command('001', '')
     return Response(json.dumps({'response' : 'Request to refresh data received'}))
 
 def main():
-    global ENVISALINKCLIENT
+    global EnvisalinkClient
 
     parser = argparse.ArgumentParser('Flask powered Alarm Server')
     parser.add_argument('config', help='Configurationf file', default='')
@@ -109,8 +109,8 @@ def main():
     config = AlarmServerConfig(args.config)
 
     # Create Envisalink client object
-    ENVISALINKCLIENT = Envisalink.Client(config, CONNECTEDCLIENTS)
-    gevent.spawn(ENVISALINKCLIENT.connect)
+    EnvisalinkClient = Envisalink.Client(config, CONNECTEDCLIENTS)
+    gevent.spawn(EnvisalinkClient.connect)
 
     app.debug = True
     server = WSGIServer(("", 5000), app, keyfile=config.KEYFILE, certfile=config.CERTFILE)
