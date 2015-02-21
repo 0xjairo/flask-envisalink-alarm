@@ -15,7 +15,7 @@ import time
 
 logger = logging.getLogger('alarmserver')
 logger.setLevel(logging.DEBUG)
-# Console handler 
+# Console handler
 # Prints all messages (debug level)
 ch = logging.StreamHandler();
 ch.setLevel(logging.DEBUG)
@@ -47,9 +47,9 @@ class ServerSentEvent(object):
     def encode(self):
         if not self.data:
             return ""
-        lines = ["%s: %s" % (v, k) 
+        lines = ["%s: %s" % (v, k)
                  for k, v in self.desc_map.iteritems() if k]
-        
+
         return "%s\n\n" % "\n".join(lines)
 
 app = Flask(__name__)
