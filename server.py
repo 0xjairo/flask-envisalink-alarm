@@ -13,6 +13,7 @@ import argparse
 import json
 import logging
 import time
+import notify
 
 logger = logging.getLogger('alarmserver')
 logger.setLevel(logging.INFO)
@@ -108,9 +109,12 @@ def main():
     logger.info('Using configuration file %s' % args.config)
 
     config = AlarmServerConfig(args.config)
+    pushnotify = notify.pushover(config.PUSHOVER_APPTOKEN, config.PUSHOVER_USERTOKEN)
 
     def zoneopen(data, name):
-        print '{} (zone: {})'.format(name, data)
+        msg = '{} (zone: {})'.format(name, data)
+        print msg
+        pushnotify.send(msg)
 
     # Create Envisalink client object
     EnvisalinkClient = Envisalink.Client(config, CONNECTEDCLIENTS)

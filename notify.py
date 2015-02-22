@@ -1,3 +1,5 @@
+#from gevent import socket
+from gevent import monkey; monkey.patch_ssl()
 import httplib
 import urllib
 
@@ -6,7 +8,7 @@ class pushover(object):
         self.app_token = app_token
         self.user_key = user_key
 
-    def send(msg):
+    def send(self, msg):
         conn = httplib.HTTPSConnection("api.pushover.net:443")
         conn.request("POST", "/1/messages.json",
                 urllib.urlencode({
