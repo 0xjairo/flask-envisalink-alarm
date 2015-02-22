@@ -109,8 +109,13 @@ def main():
 
     config = AlarmServerConfig(args.config)
 
+    def zoneopen(data, name):
+        print '{} (zone: {})'.format(name, data)
+
     # Create Envisalink client object
     EnvisalinkClient = Envisalink.Client(config, CONNECTEDCLIENTS)
+    # register callbacks
+    EnvisalinkClient.register_cb(609, zoneopen)
     gevent.spawn(EnvisalinkClient.connect)
 
     app.debug = True

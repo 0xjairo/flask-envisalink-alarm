@@ -10,6 +10,11 @@ from envisalinkdefs import evl_ArmModes
 
 ALARMSTATE={'version' : 0.2}
 
+
+# Exception definition
+class EnvisalinkException(Exception):
+    pass
+
 def dict_merge(a, b):
     c = a.copy()
     c.update(b)
@@ -55,6 +60,9 @@ class Client():
 
         # Reconnect delay
         self._retrydelay = 10
+
+        # callbacks
+        self.callbacks = {}
 
     def connect(self, reconnect = False):
         # Create the socket and connect to the server
@@ -198,6 +206,7 @@ class Client():
         # the type of event
 
         parameters = int(parameters)
+        name = ''
 
         # if zone event
         if event['type'] == 'zone':
@@ -205,8 +214,9 @@ class Client():
             # if the zone is named in the config file save info in self._alarmstate
             if zone in self._config.ZONENAMES:
                 # save zone if not already there
-                if not zone in self._alarmstate['zone']: 
-                    self._alarmstate['zone'][zone] = {'name' : self._config.ZONENAMES[zone]}
+                name = self._config.ZONENAMES[zone]
+                if not zone in self._alarmstate['zone']:
+                    self._alarmstate['zone'][zone] = {'name' : name}
             else:
                 self.logger.debug('Ignoring unnamed zone {}'.format(zone))
 
@@ -215,12 +225,13 @@ class Client():
             partition = parameters
             if partition in self._config.PARTITIONNAMES:
                 # save partition name in alarmstate
-                if not partition in self._alarmstate['partition']: 
-                    self._alarmstate['partition'][partition] = {'name' : self._config.PARTITIONNAMES[partition]}
+                name = self._config.PARTITIONNAMES[partition]
+                if not partition in self._alarmstate['partition']:
+                    self._alarmstate['partition'][partition] = {'name' : name}
             else:
                 self.logger.debug('Ignoring unnamed partition {}'.format(partition))
         else:
-            if not parameters in self._alarmstate[event['type']]: 
+            if not parameters in self._alarmstate[event['type']]:
                 self._alarmstate[event['type']][partition] = {}
 
         # shorthand to event state
@@ -267,7 +278,11 @@ class Client():
                   'message'  : message})
 
         # log event
-        self.logger.info('New alarm state. Code: {}, Message: {}'.format(code, message))
+        self.logger.info('New alarm state. Code: {}, Param: {}, Message: {}'.format(code, parameters, message))
+
+        # callback logic
+        for cb in self.callbacks.get(code,[]):
+            cb(parameters, name)
 
         # manage last events list if it's > MAXEVENTS
         if len(eventstate[parameters]['lastevents']) > self._config.MAXEVENTS:
@@ -278,6 +293,14 @@ class Client():
         if len(eventstate['lastevents']) > self._config.MAXALLEVENTS:
             eventstate['lastevents'].pop(0)
 
+    def register_cb(self, event_code, callback):
+        if event_code not in evl_ResponseTypes.keys():
+            raise EnvisalinkException('Undefined event {}'.format(event_code))
+
+        try:
+            self.callbacks[event_code].append(callback)
+        except KeyError:
+            self.callbacks[event_code] = [callback]
 
     def handle_zone(self, code, parameters, event, message):
         self.handle_event(code, parameters[1:], event, message)
