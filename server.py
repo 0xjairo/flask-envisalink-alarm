@@ -1,5 +1,6 @@
-# author: oskar.blom@gmail.com
-#
+# author: Jairo Sanchez
+# gevent code based on snippet by oskar.blom@gmail.com
+# on http://flask.pocoo.org/snippets/116/
 # Make sure your gevent version is >= 1.0
 import gevent
 from gevent.pywsgi import WSGIServer
