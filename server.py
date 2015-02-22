@@ -114,7 +114,7 @@ def main():
     def zoneopen(data, name):
         msg = '{} (zone: {})'.format(name, data)
         print msg
-        pushnotify.send(msg)
+        pushnotify.send(msg, priority=-2)
 
     # Create Envisalink client object
     EnvisalinkClient = Envisalink.Client(config, CONNECTEDCLIENTS)
