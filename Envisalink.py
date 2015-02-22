@@ -266,6 +266,9 @@ class Client():
                   'code'     : code,
                   'message'  : message})
 
+        # log event
+        self.logger.info('New alarm state. Code: {}, Message: {}'.format(code, message))
+
         # manage last events list if it's > MAXEVENTS
         if len(eventstate[parameters]['lastevents']) > self._config.MAXEVENTS:
             eventstate[parameters]['lastevents'].pop(0)
