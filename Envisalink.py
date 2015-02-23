@@ -3,6 +3,7 @@ from gevent import monkey; monkey.patch_socket()
 import logging
 import time
 import datetime
+import alarmdb
 
 from envisalinkdefs import evl_ResponseTypes
 from envisalinkdefs import evl_Defaults
@@ -60,6 +61,9 @@ class Client():
 
         # Reconnect delay
         self._retrydelay = 10
+
+        # alarm database handler
+        self.db = alarmdb.AlarmDB()
 
         # callbacks
         self.callbacks = {}
@@ -200,7 +204,7 @@ class Client():
             return
 
         if not event['type'] in self._alarmstate: 
-            self._alarmstate[event['type']]={'lastevents' : []}
+            self._alarmstate[event['type']]={}
 
         # save event in alarm state depending on
         # the type of event
@@ -252,10 +256,6 @@ class Client():
         if 'status' in event:
             eventstate[parameters]['status']=dict_merge(eventstate[parameters]['status'], event['status'])
 
-        # append event to lastevents, crete list if it doesn't exist
-        if not 'lastevents' in eventstate[parameters]: 
-            eventstate[parameters]['lastevents'] = []
-
         # if the state of the alarm (i.e., zone, partition, etc) remains
         # unchanged after event['status'] has been merged, return and
         # do not store in history
@@ -263,35 +263,31 @@ class Client():
             self.logger.debug('Discarded event. State not changed. ({} {})'.format(event['type'], parameters))
             return
 
-        # if lastevents is a list of non-zero length
-        if eventstate[parameters]['lastevents']:
-            # if this event is the same as previous discard it 
-            # except if lastevents is empty, then we get an IndexError exception
-            if eventstate[parameters]['lastevents'][-1]['code'] == code:
-                self.logger.debug('{}:{} ({}) discarded duplicate event'.format(event['type'], parameters, code))
+        # if this event is the same as previous discard it
+        try:
+            last_code =  self.db.lastevent(event['type'], parameters)
+        except alarmdb.AlarmDBException:
+            # if no data on table, ignore exception
+            pass
+        else:
+            if last_code == code:
+                self.logger.debug(
+                        '{}:{} ({}) discarded duplicate event'.format(
+                            event['type'], parameters, code))
                 return
 
-        # append this event  to lastevents
-        eventstate[parameters]['lastevents'].append({  
-                  'datetime' : str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), 
-                  'code'     : code,
-                  'message'  : message})
-
-        # log event
-        self.logger.info('New alarm state. Code: {}, Param: {}, Message: {}'.format(code, parameters, message))
+        # write event to database and log
+        self.db.logevent(event['type'], parameters, code)
+        self.logger.info(
+                'New alarm state. Code: {}, Param: {}, Message: {}'.format(
+                    code, parameters, message))
 
         # callback logic
         for cb in self.callbacks.get(code,[]):
             cb(parameters, name)
 
-        # manage last events list if it's > MAXEVENTS
-        if len(eventstate[parameters]['lastevents']) > self._config.MAXEVENTS:
-            eventstate[parameters]['lastevents'].pop(0)
+        # TODO: Add logic to manage size of database
 
-
-        eventstate['lastevents'].append({'datetime' : str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), 'message' : message})
-        if len(eventstate['lastevents']) > self._config.MAXALLEVENTS:
-            eventstate['lastevents'].pop(0)
 
     def register_cb(self, event_code, callback):
         if event_code not in evl_ResponseTypes.keys():
