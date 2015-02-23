@@ -16,11 +16,11 @@ import time
 import notify
 
 logger = logging.getLogger('alarmserver')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 # Console handler
 # Prints all messages (debug level)
 ch = logging.StreamHandler();
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.WARNING)
 # create formatter
 formatter = logging.Formatter(
     fmt='%(asctime)s %(name)s %(levelname)s: %(message)s',
