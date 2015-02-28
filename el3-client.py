@@ -7,8 +7,8 @@ from gevent.pywsgi import WSGIServer
 from gevent.queue import Queue
 from flask import Flask, Response
 from flask import render_template
-import Envisalink
-from AlarmServerConfig import AlarmServerConfig
+import el3client.Envisalink
+from el3client.AlarmServerConfig import AlarmServerConfig
 import argparse
 import json
 import logging
@@ -117,7 +117,7 @@ def main():
         pushnotify.send(msg, priority=-1)
 
     # Create Envisalink client object
-    EnvisalinkClient = Envisalink.Client(config, CONNECTEDCLIENTS)
+    EnvisalinkClient = el3client.Envisalink.Client(config, CONNECTEDCLIENTS)
     # register callbacks
     EnvisalinkClient.register_cb(609, zoneopen)
     gevent.spawn(EnvisalinkClient.connect)
