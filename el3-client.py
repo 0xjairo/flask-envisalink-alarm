@@ -99,6 +99,18 @@ def refresh():
     EnvisalinkClient.send_command('001', '')
     return Response(json.dumps({'response' : 'Request to refresh data received'}))
 
+class Zone(object):
+    def __init__(self, number, name):
+        self.number = number
+        self.name = name
+        self.isopen = False
+
+    def open(self, isopen=True):
+        self.isopen = isopen
+
+    def reset(self):
+        self.isopen = False
+
 def main():
     global EnvisalinkClient
 
@@ -111,10 +123,17 @@ def main():
     config = AlarmServerConfig(args.config)
     pushnotify = notify.pushover(config.PUSHOVER_APPTOKEN, config.PUSHOVER_USERTOKEN)
 
-    def zoneopen(data, name):
-        msg = '{} (zone: {})'.format(name, data)
+    sf = SparkFun('data.sparkfun.com', config.PHANT_PUBLICKEY, confg.PHANT_PRIVATEKEY
+            config.PHANT_FIELDS)
+    zones = {}
+    for zone,name in config.ZONENAMES.iteritems():
+        zones[zone] = Zone(zone, name)
+
+    def zoneopen(name, zone):
+        msg = '{} (zone: {})'.format(name, zone)
+        #pushnotify.send(msg, priority=-1)
         print msg
-        pushnotify.send(msg, priority=-1)
+        zones[zone].open()
 
     # Create Envisalink client object
     EnvisalinkClient = el3client.Envisalink.Client(config, CONNECTEDCLIENTS)
