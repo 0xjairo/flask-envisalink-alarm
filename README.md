@@ -1,7 +1,11 @@
-flask-envisalink-alarm
-======================
+Envisalink 3 Alarm Client
+=========================
 
-Flask based home alarm server for use with [Envisalink3](http://www.eyezon.com/?page_id=176) modules.
+Home alarm client for use with [Envisalink3](http://www.eyezon.com/?page_id=176) modules.
+
+Installation
+============
+
 
 
 Requirements

@@ -27,6 +27,12 @@ class AlarmServerConfig():
         self.PUSHOVER_APPTOKEN = self.read_config_var('pushover', 'apptoken', '', 'str')
         self.PHANT_PUBLICKEY = self.read_config_var('phant','publickey', '', 'str')
         self.PHANT_PRIVATEKEY = self.read_config_var('phant','privatekey', '', 'str')
+        #self.PHANT_FIELDS = [s.strip() for s in self.read_config_var('phant','fields', '', 'str').split(',')]
+        self.PHANT_FIELDS = {}
+        for i in range(1, MAXZONES+1):
+            field = self.read_config_var('phant', 'field_zone'+str(i), False, 'str', True)
+            if field: self.PHANT_FIELDS[i] = {'field': field}
+
         self.ALARMCODE = self.read_config_var('envisalink', 'alarmcode', 1111, 'int')
         self.EVENTTIMEAGO = self.read_config_var('alarmserver', 'eventtimeago', True, 'bool')
         self.LOGFILE = self.read_config_var('alarmserver', 'logfile', '', 'str')

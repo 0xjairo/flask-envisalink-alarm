@@ -14,6 +14,7 @@ import json
 import logging
 import time
 import notify
+import sparkfun
 
 logger = logging.getLogger('alarmserver')
 logger.setLevel(logging.WARNING)
@@ -99,18 +100,6 @@ def refresh():
     EnvisalinkClient.send_command('001', '')
     return Response(json.dumps({'response' : 'Request to refresh data received'}))
 
-class Zone(object):
-    def __init__(self, number, name):
-        self.number = number
-        self.name = name
-        self.isopen = False
-
-    def open(self, isopen=True):
-        self.isopen = isopen
-
-    def reset(self):
-        self.isopen = False
-
 def main():
     global EnvisalinkClient
 
@@ -121,24 +110,48 @@ def main():
     logger.info('Using configuration file %s' % args.config)
 
     config = AlarmServerConfig(args.config)
+
+    # pushover
     pushnotify = notify.pushover(config.PUSHOVER_APPTOKEN, config.PUSHOVER_USERTOKEN)
 
-    sf = SparkFun('data.sparkfun.com', config.PHANT_PUBLICKEY, confg.PHANT_PRIVATEKEY
-            config.PHANT_FIELDS)
-    zones = {}
-    for zone,name in config.ZONENAMES.iteritems():
-        zones[zone] = Zone(zone, name)
+    # sparkfun data
+    sf = sparkfun.SparkFun('data.sparkfun.com', config.PHANT_PUBLICKEY, 
+            config.PHANT_PRIVATEKEY, config.PHANT_FIELDS)
 
-    def zoneopen(name, zone):
+    def zoneopen(zone, name):
         msg = '{} (zone: {})'.format(name, zone)
+        sf.updatezone(zone, 'Open')
+        sf.publish()
         #pushnotify.send(msg, priority=-1)
         print msg
-        zones[zone].open()
+
+    def zoneclosed(zone, name):
+        sf.updatezone(zone, '')
+
+    def partitionarmed(partition, name):
+        # 652
+        msg = '{} (partition: {}) Armed'.format(name, partition)
+        pushnotify.send(msg, priority=0)
+
+    def partitiondisarmed(partition, name):
+        # 655
+        msg = '{} (partition: {}) Disarmed'.format(name, partition)
+        pushnotify.send(msg, priority=0)
+
+    def partitionalarm(partition, name):
+        # 654
+        msg = '{} (partition: {}) In Alarm!!!'.format(name, partition)
+        pushnotify.send(msg, priority=1)
 
     # Create Envisalink client object
     EnvisalinkClient = el3client.Envisalink.Client(config, CONNECTEDCLIENTS)
     # register callbacks
     EnvisalinkClient.register_cb(609, zoneopen)
+    EnvisalinkClient.register_cb(610, zoneclosed)
+    EnvisalinkClient.register_cb(652, partitionarmed)
+    EnvisalinkClient.register_cb(655, partitiondisarmed)
+    EnvisalinkClient.register_cb(654, partitionalarm)
+
     gevent.spawn(EnvisalinkClient.connect)
 
     app.debug = True
