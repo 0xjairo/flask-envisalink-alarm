@@ -284,7 +284,7 @@ class Client():
 
         # callback logic
         for cb in self.callbacks.get(code,[]):
-            cb(parameters, name)
+            cb(code, parameters, name)
 
         # TODO: Add logic to manage size of database
 

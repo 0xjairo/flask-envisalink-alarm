@@ -118,39 +118,41 @@ def main():
     sf = sparkfun.SparkFun('data.sparkfun.com', config.PHANT_PUBLICKEY, 
             config.PHANT_PRIVATEKEY, config.PHANT_FIELDS)
 
-    def zoneopen(zone, name):
+    def zoneopen(code,zone, name):
         msg = '{} (zone: {})'.format(name, zone)
         sf.updatezone(zone, 'Open')
         sf.publish()
         #pushnotify.send(msg, priority=-1)
         print msg
 
-    def zoneclosed(zone, name):
+    def zoneclosed(code, zone, name):
         sf.updatezone(zone, '')
 
-    def partitionarmed(partition, name):
-        # 652
-        msg = '{} (partition: {}) Armed'.format(name, partition)
-        pushnotify.send(msg, priority=0)
+    def partition_cb(code, partition, name):
+        if code == 652:
+            msg = '{} Armed'.format(name)
+            priority = 0
+        elif code == 654:
+            msg = '{} In Alarm!!!'.format(name)
+            priority = 1
+        elif code == 655 or code == 750:
+            msg = '{} Disarmed'.format(name)
+            priority = 0
+        elif code == 657:
+            msg = '{} Entry Delay'.format(name)
+            priority = 1
+        pushnotify.send(msg, priority=priority)
 
-    def partitiondisarmed(partition, name):
-        # 655
-        msg = '{} (partition: {}) Disarmed'.format(name, partition)
-        pushnotify.send(msg, priority=0)
-
-    def partitionalarm(partition, name):
-        # 654
-        msg = '{} (partition: {}) In Alarm!!!'.format(name, partition)
-        pushnotify.send(msg, priority=1)
 
     # Create Envisalink client object
     EnvisalinkClient = el3client.Envisalink.Client(config, CONNECTEDCLIENTS)
     # register callbacks
     EnvisalinkClient.register_cb(609, zoneopen)
     EnvisalinkClient.register_cb(610, zoneclosed)
-    EnvisalinkClient.register_cb(652, partitionarmed)
-    EnvisalinkClient.register_cb(655, partitiondisarmed)
-    EnvisalinkClient.register_cb(654, partitionalarm)
+    EnvisalinkClient.register_cb(652, partition_cb) # partition armed
+    EnvisalinkClient.register_cb(654, partition_cb) # in alarm!
+    EnvisalinkClient.register_cb(655, partition_cb) # alarm disarmed
+    EnvisalinkClient.register_cb(750, partition_cb) # partition disarmed
 
     gevent.spawn(EnvisalinkClient.connect)
 
@@ -158,6 +160,7 @@ def main():
     server = WSGIServer(("", 5000), app, keyfile=config.KEYFILE, certfile=config.CERTFILE)
 
     gevent.spawn(publish)
+    pushnotify.send('Alarm service started')
     try:
         server.serve_forever()
     except KeyboardInterrupt:
