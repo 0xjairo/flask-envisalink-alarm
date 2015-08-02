@@ -5,17 +5,42 @@
      <h1>Alarm Server</h1>
      <div id="event"></div>
      <hr>
-     <div id="zones">
-     </div>
+     <div id="info"></div>
+     <div id="partitions"></div>
+     <div id="zones"></div>
      <script type="text/javascript">
 
      var eventOutputContainer = document.getElementById("event");
+     var partitionContainer = document.getElementById("partitions");
      var zonesContainer = document.getElementById("zones");
+     var infoContainer = document.getElementById("info");
      var evtSrc = new EventSource("/subscribe");
 
      evtSrc.onmessage = function(e) {
          //console.log(e.data);
          var alarmstate = JSON.parse(e.data);
+         // partitions
+         var partitions = alarmstate.partition;
+         partitionContainer.innerHTML = "";
+         for(var partNum in partitions){
+             if(!partitions.hasOwnProperty(partNum)){ continue; }
+
+             var name = partitions[partNum].name;
+             partitionContainer.innerHTML += "<div>";
+             partitionContainer.innerHTML += "<h3>" + name + " (partition " + partNum + ")</h3>";
+             partitionContainer.innerHTML += "</div>";
+
+             partitionContainer.innerHTML += "<ul>"
+             var status = partitions[partNum].status;
+             for(var st in status){
+                 if(!status.hasOwnProperty(st)){ continue; }
+                 if(status[st] == true){
+                     partitionContainer.innerHTML += "<li>" + st; // + ": " + status[st] + "</li>";
+                 }
+             }
+             partitionContainer.innerHTML += "</ul>"
+         }
+
          var zones = alarmstate.zone;
          // clear zones
          zonesContainer.innerHTML = "";
@@ -24,7 +49,7 @@
 
              var name = zones[zone].name
              zonesContainer.innerHTML += "<div>";
-             zonesContainer.innerHTML += "<h3>" + name + " (zone " +zone + ")</h3>";
+             zonesContainer.innerHTML += "<h4>" + name + " (zone " +zone + ")</h4>";
 
              var lastevents = zones[zone].lastevents;
              try{
@@ -42,8 +67,11 @@
              zonesContainer.innerHTML += "</ul>"
              zonesContainer.innerHTML += "</div>";// + " Fault:" + zone.status.fault;
          }
+         infoContainer.innerHTML = "";
+         var version = alarmstate.version;
+         infoContainer.innerHTML += "Version:" + version;
          //console.log(alarmstate.zone)
-         eventOutputContainer.innerHTML = e.data;
+         //eventOutputContainer.innerHTML = e.data;
      };
 
      </script>
