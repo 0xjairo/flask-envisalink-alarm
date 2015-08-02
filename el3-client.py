@@ -17,11 +17,11 @@ import notify
 import sparkfun
 
 logger = logging.getLogger('alarmserver')
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 # Console handler
 # Prints all messages (debug level)
 ch = logging.StreamHandler();
-ch.setLevel(logging.WARNING)
+ch.setLevel(logging.INFO)
 # create formatter
 formatter = logging.Formatter(
     fmt='%(asctime)s %(name)s %(levelname)s: %(message)s',
