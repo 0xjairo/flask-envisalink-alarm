@@ -158,6 +158,7 @@ def main():
 
     app.debug = True
     server = WSGIServer(("", 5000), app, keyfile=config.KEYFILE, certfile=config.CERTFILE)
+    logger.info("Starting web front-end on port {}".format(config.HTTPSPORT))
 
     gevent.spawn(publish)
     pushnotify.send('Alarm service started')

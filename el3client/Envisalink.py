@@ -278,7 +278,7 @@ class Client():
 
         # write event to database and log
         self.db.logevent(event['type'], parameters, code)
-        self.logger.info(
+        self.logger.debug(
                 'New alarm state. Code: {}, Param: {}, Message: {}'.format(
                     code, parameters, message))
 
