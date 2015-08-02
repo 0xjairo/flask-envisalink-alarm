@@ -157,8 +157,8 @@ def main():
     gevent.spawn(EnvisalinkClient.connect)
 
     app.debug = True
-    server = WSGIServer(("", 5000), app, keyfile=config.KEYFILE, certfile=config.CERTFILE)
     logger.info("Starting web front-end on port {}".format(config.HTTPSPORT))
+    server = WSGIServer(("", config.HTTPSPORT), app, keyfile=config.KEYFILE, certfile=config.CERTFILE)
 
     gevent.spawn(publish)
     pushnotify.send('Alarm service started')
