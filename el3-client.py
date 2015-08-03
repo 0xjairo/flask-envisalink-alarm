@@ -110,6 +110,12 @@ def main():
     logger.info('Using configuration file %s' % args.config)
 
     config = AlarmServerConfig(args.config)
+    if config.LOGFILE:
+        logger.info('Logging data to %s' % config.LOGFILE)
+        fh = logging.FileHandler(config.LOGFILE)
+        fh.setLevel(logging.INFO)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
 
     # pushover
     pushnotify = notify.pushover(config.PUSHOVER_APPTOKEN, config.PUSHOVER_USERTOKEN)
