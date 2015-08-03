@@ -1,13 +1,19 @@
  <html>
    <head>
+<!-- Latest compiled and minified CSS -->
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
    </head>
    <body>
-     <h1>Alarm Server</h1>
-     <div id="event"></div>
-     <hr>
-     <div id="info"></div>
-     <div id="partitions"></div>
-     <div id="zones"></div>
+   <div class="container">
+         <h1>Alarm Server</h1>
+         <div id="event"></div>
+         <hr>
+         <div class="panel panel-default">
+             <div id="info" class="panel-body"></div>
+         </div>
+         <div id="partitions" class="panel panel-default"> </div>
+         <div id="zones" class="panel panel-default"> </div>
+     </div>
      <script type="text/javascript">
 
      var eventOutputContainer = document.getElementById("event");
@@ -26,19 +32,21 @@
              if(!partitions.hasOwnProperty(partNum)){ continue; }
 
              var name = partitions[partNum].name;
-             partitionContainer.innerHTML += "<div>";
+             //partitionContainer.innerHTML += '<div class="panel-body">';
              partitionContainer.innerHTML += "<h3>" + name + " (partition " + partNum + ")</h3>";
-             partitionContainer.innerHTML += "</div>";
+             //partitionContainer.innerHTML += '</div>';
+             //partitionContainer.innerHTML += '<div class="panel-body">';
 
-             partitionContainer.innerHTML += "<ul>"
              var status = partitions[partNum].status;
              for(var st in status){
                  if(!status.hasOwnProperty(st)){ continue; }
                  if(status[st] == true){
-                     partitionContainer.innerHTML += "<li>" + st; // + ": " + status[st] + "</li>";
+                     if(st == "trouble"){ label='danger'; } else { label='info'; }
+                     partitionContainer.innerHTML += '<span class="label label-' + label +'">' + st + '</span>';
+                     partitionContainer.innerHTML += '\n';
                  }
              }
-             partitionContainer.innerHTML += "</ul>"
+             //partitionContainer.innerHTML += '</div>';
          }
 
          var zones = alarmstate.zone;
@@ -58,13 +66,14 @@
                  }
              }catch(err){}
 
-             zonesContainer.innerHTML += "<ul>"
              var status = zones[zone].status;
              for(var st in status){
                  if(!status.hasOwnProperty(st)){ continue; }
-                 zonesContainer.innerHTML += "<li>" + st + ": " + status[st] + "</li>";
+                 if(status[st] == true){ label='warning'; }
+                 else{ label='default'; }
+                 zonesContainer.innerHTML += '<span class="label label-'+label+'">' + st + ": " + status[st] + "</span>";
+                 zonesContainer.innerHTML += '\n';
              }
-             zonesContainer.innerHTML += "</ul>"
              zonesContainer.innerHTML += "</div>";// + " Fault:" + zone.status.fault;
          }
          infoContainer.innerHTML = "";
