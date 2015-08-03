@@ -1,10 +1,9 @@
-RPi.GPIO==0.5.8
+Flask==0.10.1
+Jinja2==2.7.3
+MarkupSafe==0.23
+Werkzeug==0.9.6
 argparse==1.2.1
-numpy==1.6.2
-pifacecommon==4.0.0
-pifacedigitalio==3.0.4
-pygame==1.9.1release
-pygobject==3.8.2
-redis==2.10.3
-virtualenv==1.11.6
+gevent==1.0.1
+greenlet==0.4.4
+itsdangerous==0.24
 wsgiref==0.1.2
