@@ -3,7 +3,7 @@
 
 WDIR=/srv/el3client/flask-envisalink-alarm
 VIRTUALENV_DIR=/opt/el3client-venv
-CONFIG_FILE=/etc/alarmserver.cfg
+CONFIG_FILE=/etc/el3client/alarmserver.cfg
 
 source $VIRTUALENV_DIR/bin/activate
 
