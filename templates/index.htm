@@ -7,12 +7,21 @@
    <div class="container">
          <h1>Alarm Server</h1>
          <div id="event"></div>
-         <hr>
-         <div class="panel panel-default">
-             <div id="info" class="panel-body"></div>
+         <div class="row">
+             <div class="panel panel-default">
+                 <div id="info" class="panel-body"></div>
+             </div>
          </div>
-         <div id="partitions" class="panel panel-default"> </div>
-         <div id="zones" class="panel panel-default"> </div>
+         <div class="row">
+             <div class="panel panel-default">
+                 <div class="panel-heading"><h3 class="panel-title">Partitions</h3></div>
+                 <div class="panel-body">
+                     <div id="partitions"></div>
+                     <br>
+                     <div id="zones"></div>
+                 </div>
+             </div>
+         </div>
      </div>
      <script type="text/javascript">
 
@@ -32,10 +41,7 @@
              if(!partitions.hasOwnProperty(partNum)){ continue; }
 
              var name = partitions[partNum].name;
-             //partitionContainer.innerHTML += '<div class="panel-body">';
-             partitionContainer.innerHTML += "<h3>" + name + " (partition " + partNum + ")</h3>";
-             //partitionContainer.innerHTML += '</div>';
-             //partitionContainer.innerHTML += '<div class="panel-body">';
+             partitionContainer.innerHTML += "<h4>" + name + "</h4>";
 
              var status = partitions[partNum].status;
              for(var st in status){
@@ -46,7 +52,6 @@
                      partitionContainer.innerHTML += '\n';
                  }
              }
-             //partitionContainer.innerHTML += '</div>';
          }
 
          var zones = alarmstate.zone;
@@ -57,12 +62,13 @@
 
              var name = zones[zone].name
              zonesContainer.innerHTML += "<div>";
-             zonesContainer.innerHTML += "<h4>" + name + " (zone " +zone + ")</h4>";
+             zonesContainer.innerHTML += "<p>" + zone + ": " + name + "</p>";
 
              var lastevents = zones[zone].lastevents;
              try{
                  if(lastevents.length > 0){
-                     zonesContainer.innerHTML += "<p>" + st + ": " + lastevents[lastevents.length-1].message + "</p>";
+                     zonesContainer.innerHTML += "<p>" + st + ": ";
+                     zonesContainer.innerHTML += lastevents[lastevents.length-1].message + "</p>";
                  }
              }catch(err){}
 
@@ -71,10 +77,10 @@
                  if(!status.hasOwnProperty(st)){ continue; }
                  if(status[st] == true){ label='warning'; }
                  else{ label='default'; }
-                 zonesContainer.innerHTML += '<span class="label label-'+label+'">' + st + ": " + status[st] + "</span>";
+                 zonesContainer.innerHTML += '<span class="label label-'+label+'">' + st;
                  zonesContainer.innerHTML += '\n';
              }
-             zonesContainer.innerHTML += "</div>";// + " Fault:" + zone.status.fault;
+             zonesContainer.innerHTML += "</div>";
          }
          infoContainer.innerHTML = "";
          var version = alarmstate.version;
