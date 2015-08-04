@@ -107,7 +107,7 @@ class Client():
     def handle_close(self):
         self._loggedin = False
         self.socket.close()
-        self.logger.info("Disconnected from %s:%i" % (self._config.ENVISALINKHOST, self._config.ENVISALINKPORT))
+        self.logger.debug("Disconnected from %s:%i" % (self._config.ENVISALINKHOST, self._config.ENVISALINKPORT))
         self.connect(True)
 
     def handle_error(self):
