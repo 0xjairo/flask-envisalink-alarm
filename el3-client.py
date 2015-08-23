@@ -178,4 +178,13 @@ def main():
         raise SystemExit
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit:
+        pass
+    except Exception as e:
+        logger.error("Exception caught:")
+        logger.error(str(e))
+        raise
+    finally:
+        logger.info("Exiting")
